@@ -8,10 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 // MONGODB CONNECTION
-const uri = "mongodb+srv://Lanre1507:<Lanre1969>@cluster0.z77corz.mongodb.net/empire?retryWrites=true&w=majority&appName=Cluster0";
-
-// IMPORTANT: if your password contains special characters like @, replace with %40
-// For example: Lanre%4069
+const uri = "mongodb+srv://Lanre1507:Lanre1969@cluster0.z77corz.mongodb.net/empire?retryWrites=true&w=majority&appName=Cluster0";
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -31,7 +28,6 @@ async function run() {
     console.error("❌ MongoDB connection failed:", error);
   }
 }
-
 run().catch(console.dir);
 
 // ROUTES
@@ -39,10 +35,7 @@ run().catch(console.dir);
 // GET analytics from Mongo
 app.get("/api/analytics", async (req, res) => {
   try {
-    const data = await client
-      .db("empire")
-      .collection("analytics")
-      .findOne({});
+    const data = await client.db("empire").collection("analytics").findOne({});
     res.json(data);
   } catch (err) {
     console.error("Error fetching analytics:", err);
@@ -53,15 +46,34 @@ app.get("/api/analytics", async (req, res) => {
 // GET offers from Mongo
 app.get("/api/offers", async (req, res) => {
   try {
-    const data = await client
-      .db("empire")
-      .collection("offers")
-      .find({})
-      .toArray();
+    const data = await client.db("empire").collection("offers").find({}).toArray();
     res.json(data);
   } catch (err) {
     console.error("Error fetching offers:", err);
     res.status(500).json({ error: "Failed to fetch offers" });
+  }
+});
+
+// ADD a new offer (POST)
+app.post("/api/offers", async (req, res) => {
+  try {
+    const { title, payout, accepted_countries, category } = req.body;
+    if (!title || !payout || !accepted_countries || !category) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+    const result = await client
+      .db("empire")
+      .collection("offers")
+      .insertOne({
+        title,
+        payout: parseFloat(payout),
+        accepted_countries,
+        category,
+      });
+    res.json({ success: true, insertedId: result.insertedId });
+  } catch (err) {
+    console.error("Error adding offer:", err);
+    res.status(500).json({ error: "Failed to add offer" });
   }
 });
 
