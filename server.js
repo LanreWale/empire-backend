@@ -1,4 +1,5 @@
 // server.js
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
@@ -8,8 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 // MONGODB CONNECTION
-const uri = "mongodb+srv://Lanre1507:Lanre1969@cluster0.z77corz.mongodb.net/empire?retryWrites=true&w=majority&appName=Cluster0";
-
+const uri = process.env.MONGO_URI;
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -32,7 +32,7 @@ run().catch(console.dir);
 
 // ROUTES
 
-// GET analytics from Mongo
+// GET analytics
 app.get("/api/analytics", async (req, res) => {
   try {
     const data = await client.db("empire").collection("analytics").findOne({});
@@ -43,7 +43,7 @@ app.get("/api/analytics", async (req, res) => {
   }
 });
 
-// GET offers from Mongo
+// GET offers
 app.get("/api/offers", async (req, res) => {
   try {
     const data = await client.db("empire").collection("offers").find({}).toArray();
@@ -54,22 +54,19 @@ app.get("/api/offers", async (req, res) => {
   }
 });
 
-// ADD a new offer (POST)
+// POST offer
 app.post("/api/offers", async (req, res) => {
   try {
     const { title, payout, accepted_countries, category } = req.body;
     if (!title || !payout || !accepted_countries || !category) {
       return res.status(400).json({ error: "Missing fields" });
     }
-    const result = await client
-      .db("empire")
-      .collection("offers")
-      .insertOne({
-        title,
-        payout: parseFloat(payout),
-        accepted_countries,
-        category,
-      });
+    const result = await client.db("empire").collection("offers").insertOne({
+      title,
+      payout: parseFloat(payout),
+      accepted_countries,
+      category,
+    });
     res.json({ success: true, insertedId: result.insertedId });
   } catch (err) {
     console.error("Error adding offer:", err);
@@ -77,12 +74,12 @@ app.post("/api/offers", async (req, res) => {
   }
 });
 
-// health check
+// Health check
 app.get("/healthz", (req, res) => {
   res.send("OK");
 });
 
-// fallback for unknown routes
+// Fallback
 app.use((req, res) => {
   res.status(404).json({ error: "Not found" });
 });
